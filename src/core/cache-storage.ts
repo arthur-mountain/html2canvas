@@ -82,6 +82,7 @@ export class Cache {
             return;
         }
 
+        // load img with additional proxy url
         let src = key;
         if (useProxy) {
             src = await this.proxy(src);

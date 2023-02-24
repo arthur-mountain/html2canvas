@@ -30,14 +30,13 @@ const renderElement = async (element: HTMLElement, opts: Partial<Options>): Prom
     if (!element || typeof element !== 'object') {
         return Promise.reject('Invalid element provided as first argument');
     }
+    // 取得最頂層物件(document)
     const ownerDocument = element.ownerDocument;
-
     if (!ownerDocument) {
         throw new Error(`Element is not attached to a Document`);
     }
-
+    // 取得最頂層物件的window物件
     const defaultView = ownerDocument.defaultView;
-
     if (!defaultView) {
         throw new Error(`Document is not attached to a Window`);
     }

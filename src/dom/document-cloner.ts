@@ -82,7 +82,7 @@ export class DocumentCloner {
         const cloneWindow = iframe.contentWindow;
         const documentClone: Document = cloneWindow.document;
 
-        /* Chrome doesn't detect relative background-images assigned in inline <style> sheets when fetched through getComputedStyle
+        /* Chrome doesn't detect relative background-images assigned in inline <v> sheets when fetched through getComputedStyle
          if window url is about:blank, we can assign the url to current by writing onto the document
          */
 
@@ -140,21 +140,23 @@ export class DocumentCloner {
     }
 
     createElementClone<T extends HTMLElement | SVGElement>(node: T): HTMLElement | SVGElement {
-        if (isDebugging(node, DebuggerType.CLONE)) {
+        if (isDebugging(node, DebuggerType.CLONE)) { // debug log when cloning
             debugger;
         }
-        if (isCanvasElement(node)) {
+        if (isCanvasElement(node)) { // <canvas></canvas>
             return this.createCanvasClone(node);
         }
-        if (isVideoElement(node)) {
+        
+        if (isVideoElement(node)) {// <video></video>
             return this.createVideoClone(node);
         }
-        if (isStyleElement(node)) {
+        
+        if (isStyleElement(node)) {// <style></style>
             return this.createStyleClone(node);
         }
 
         const clone = node.cloneNode(false) as T;
-        if (isImageElement(clone)) {
+        if (isImageElement(clone)) { // <img></img>
             if (isImageElement(node) && node.currentSrc && node.currentSrc !== node.src) {
                 clone.src = node.currentSrc;
                 clone.srcset = '';
@@ -165,7 +167,7 @@ export class DocumentCloner {
             }
         }
 
-        if (isCustomElement(clone)) {
+        if (isCustomElement(clone)) { // <my-custom-el></my-custom-el>
             return this.createCustomElementClone(clone);
         }
 
@@ -190,7 +192,7 @@ export class DocumentCloner {
                     return css;
                 }, '');
                 const style = node.cloneNode(false) as HTMLStyleElement;
-                style.textContent = css;
+                style.textContent = css; // add style text to <script></script>
                 return style;
             }
         } catch (e) {
@@ -200,10 +202,13 @@ export class DocumentCloner {
                 throw e;
             }
         }
+        // default just return cloned node
         return node.cloneNode(false) as HTMLStyleElement;
     }
 
     createCanvasClone(canvas: HTMLCanvasElement): HTMLImageElement | HTMLCanvasElement {
+        // options.inlineImages === options.foreignObjectRendering
+        // should render foreignObject
         if (this.options.inlineImages && canvas.ownerDocument) {
             const img = canvas.ownerDocument.createElement('img');
             try {
@@ -223,6 +228,7 @@ export class DocumentCloner {
             const clonedCtx = clonedCanvas.getContext('2d');
             if (clonedCtx) {
                 if (!this.options.allowTaint && ctx) {
+                    // cloned canvas put image data from origin canvas image
                     clonedCtx.putImageData(ctx.getImageData(0, 0, canvas.width, canvas.height), 0, 0);
                 } else {
                     const gl = canvas.getContext('webgl2') ?? canvas.getContext('webgl');
@@ -254,6 +260,7 @@ export class DocumentCloner {
         canvas.height = video.offsetHeight;
         const ctx = canvas.getContext('2d');
 
+        // return canvas with video that be draw
         try {
             if (ctx) {
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -266,6 +273,8 @@ export class DocumentCloner {
             this.context.logger.info(`Unable to clone video as it is tainted`, video);
         }
 
+        // if render video to canvas fail,
+        // create blank canvas with width and height of video
         const blankCanvas = video.ownerDocument.createElement('canvas');
 
         blankCanvas.width = video.offsetWidth;
@@ -274,24 +283,32 @@ export class DocumentCloner {
     }
 
     appendChildNode(clone: HTMLElement | SVGElement, child: Node, copyStyles: boolean): void {
+        // not element node
+        // not script node && not have ignore-attr && 
+        // if ignoreElements function exists, check ignoreElements(child) 
         if (
             !isElementNode(child) ||
             (!isScriptElement(child) &&
                 !child.hasAttribute(IGNORE_ATTRIBUTE) &&
                 (typeof this.options.ignoreElements !== 'function' || !this.options.ignoreElements(child)))
         ) {
+            // not copy style || not element node || not script element
             if (!this.options.copyStyles || !isElementNode(child) || !isStyleElement(child)) {
+                // clone node append child 
                 clone.appendChild(this.cloneNode(child, copyStyles));
             }
         }
     }
 
     cloneChildNodes(node: Element, clone: HTMLElement | SVGElement, copyStyles: boolean): void {
+        // clone child nodes recursive use for loop
         for (
             let child = node.shadowRoot ? node.shadowRoot.firstChild : node.firstChild;
             child;
             child = child.nextSibling
         ) {
+            // check is <slot></slot> &&
+            // assignedNodes will return nodes inside slot
             if (isElementNode(child) && isSlotElement(child) && typeof child.assignedNodes === 'function') {
                 const assignedNodes = child.assignedNodes() as ChildNode[];
                 if (assignedNodes.length) {
@@ -308,6 +325,8 @@ export class DocumentCloner {
             return document.createTextNode(node.data);
         }
 
+        // if is document that is top level element,
+        // return clone document 
         if (!node.ownerDocument) {
             return node.cloneNode(false);
         }
@@ -322,13 +341,17 @@ export class DocumentCloner {
             const styleBefore = window.getComputedStyle(node, ':before');
             const styleAfter = window.getComputedStyle(node, ':after');
 
+            // clonedReferenceElement as cloneNode
             if (this.referenceElement === node && isHTMLElementNode(clone)) {
                 this.clonedReferenceElement = clone;
             }
-            if (isBodyElement(clone)) {
+            // add display:none to body for pseudo(:before or :after)
+            if (isBodyElement(clone)) { 
                 createPseudoHideStyles(clone);
             }
 
+            // parse css style like quotes, content, questionMark...etc 
+            // and save css state in counter
             const counters = this.counters.parse(new CSSParsedCounterDeclaration(this.context, style));
             const before = this.resolvePseudoContent(node, clone, styleBefore, PseudoElementType.BEFORE);
 
@@ -397,6 +420,7 @@ export class DocumentCloner {
         const anonymousReplacedElement = document.createElement('html2canvaspseudoelement');
         copyCSSStyles(style, anonymousReplacedElement);
 
+        // append element to html2canvaspseudoelement depends on parsed token
         declaration.content.forEach((token) => {
             if (token.type === TokenType.STRING_TOKEN) {
                 anonymousReplacedElement.appendChild(document.createTextNode(token.value));
