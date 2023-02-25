@@ -27,6 +27,7 @@ export class CounterState {
     parse(style: CSSParsedCounterDeclaration): string[] {
         const counterIncrement = style.counterIncrement;
         const counterReset = style.counterReset;
+        
         let canReset = true;
 
         if (counterIncrement !== null) {

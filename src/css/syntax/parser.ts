@@ -33,6 +33,10 @@ export class Parser {
         this._tokens = tokens;
     }
 
+    // static create method of Parser,
+    // Tokenizer write color string like rgb(0,0,0),
+    // return a new Parser instance and
+    // pass prev tokenizer that write color value as params after read method;
     static create(value: string): Parser {
         const tokenizer = new Tokenizer();
         tokenizer.write(value);

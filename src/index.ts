@@ -1,11 +1,11 @@
-import {Bounds, parseBounds, parseDocumentSize} from './css/layout/bounds';
-import {COLORS, isTransparent, parseColor} from './css/types/color';
-import {CloneConfigurations, CloneOptions, DocumentCloner, WindowOptions} from './dom/document-cloner';
-import {isBodyElement, isHTMLElement, parseTree} from './dom/node-parser';
-import {CacheStorage} from './core/cache-storage';
-import {CanvasRenderer, RenderConfigurations, RenderOptions} from './render/canvas/canvas-renderer';
-import {ForeignObjectRenderer} from './render/canvas/foreignobject-renderer';
-import {Context, ContextOptions} from './core/context';
+import { Bounds, parseBounds, parseDocumentSize } from './css/layout/bounds';
+import { COLORS, isTransparent, parseColor } from './css/types/color';
+import { CloneConfigurations, CloneOptions, DocumentCloner, WindowOptions } from './dom/document-cloner';
+import { isBodyElement, isHTMLElement, parseTree } from './dom/node-parser';
+import { CacheStorage } from './core/cache-storage';
+import { CanvasRenderer, RenderConfigurations, RenderOptions } from './render/canvas/canvas-renderer';
+import { ForeignObjectRenderer } from './render/canvas/foreignobject-renderer';
+import { Context, ContextOptions } from './core/context';
 
 export type Options = CloneOptions &
     WindowOptions &
@@ -81,8 +81,7 @@ const renderElement = async (element: HTMLElement, opts: Partial<Options>): Prom
     };
 
     context.logger.debug(
-        `Starting document clone with size ${windowBounds.width}x${
-            windowBounds.height
+        `Starting document clone with size ${windowBounds.width}x${windowBounds.height
         } scrolled to ${-windowBounds.left},${-windowBounds.top}`
     );
 
@@ -94,12 +93,13 @@ const renderElement = async (element: HTMLElement, opts: Partial<Options>): Prom
 
     const container = await documentCloner.toIFrame(ownerDocument, windowBounds);
 
-    const {width, height, left, top} =
+    const { width, height, left, top } =
         isBodyElement(clonedElement) || isHTMLElement(clonedElement)
             ? parseDocumentSize(clonedElement.ownerDocument)
             : parseBounds(context, clonedElement);
 
     const backgroundColor = parseBackgroundColor(context, clonedElement, opts.backgroundColor);
+    console.log(`🚀 ~ renderElement ~ backgroundColor:`, backgroundColor);
 
     const renderOptions: RenderConfigurations = {
         canvas: opts.canvas,
@@ -136,7 +136,8 @@ const renderElement = async (element: HTMLElement, opts: Partial<Options>): Prom
         const renderer = new CanvasRenderer(context, renderOptions);
         canvas = await renderer.render(root);
     }
-
+    
+    opts.removeContainer = false;
     if (opts.removeContainer ?? true) {
         if (!DocumentCloner.destroy(container)) {
             context.logger.error(`Cannot detach cloned iframe as it is not in the DOM anymore`);
@@ -161,8 +162,8 @@ const parseBackgroundColor = (context: Context, element: HTMLElement, background
         typeof backgroundColorOverride === 'string'
             ? parseColor(context, backgroundColorOverride)
             : backgroundColorOverride === null
-            ? COLORS.TRANSPARENT
-            : 0xffffffff;
+                ? COLORS.TRANSPARENT
+                : 0xffffffff;
 
     return element === ownerDocument.documentElement
         ? isTransparent(documentBackgroundColor)

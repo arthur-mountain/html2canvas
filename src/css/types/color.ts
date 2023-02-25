@@ -152,8 +152,10 @@ const SUPPORTED_COLOR_FUNCTIONS: {
     rgba: rgb
 };
 
-export const parseColor = (context: Context, value: string): Color =>
-    color.parse(context, Parser.create(value).parseComponentValue());
+export const parseColor = (context: Context, value: string): Color =>{
+    console.log("Parser: ",Parser.create(value));
+    return color.parse(context, Parser.create(value).parseComponentValue());
+}
 
 export const COLORS: {[key: string]: Color} = {
     ALICEBLUE: 0xf0f8ffff,

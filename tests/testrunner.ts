@@ -1,9 +1,9 @@
-import {testList, ignoredTests} from '../build/reftests';
+import { testList, ignoredTests } from '../build/reftests';
 // @ts-ignore
-import {default as platform} from 'platform';
+import { default as platform } from 'platform';
 // @ts-ignore
 import Promise from 'es6-promise';
-import {ScreenshotRequest} from './types';
+import { ScreenshotRequest } from './types';
 
 // @ts-ignore
 window.Promise = Promise;
@@ -66,7 +66,7 @@ testList
                     // Chrome does not resolve relative background urls correctly inside of a nested iframe
                     try {
                         history.replaceState(null, '', url);
-                    } catch (e) {}
+                    } catch (e) { }
                 }
 
                 document.body.appendChild(testContainer);
@@ -75,7 +75,7 @@ testList
                 if (hasHistoryApi) {
                     try {
                         history.replaceState(null, '', testRunnerUrl);
-                    } catch (e) {}
+                    } catch (e) { }
                 }
                 document.body.removeChild(testContainer);
             });

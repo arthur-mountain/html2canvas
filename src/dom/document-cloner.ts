@@ -326,7 +326,7 @@ export class DocumentCloner {
         }
 
         // if is document that is top level element,
-        // return clone document 
+        // return clone document
         if (!node.ownerDocument) {
             return node.cloneNode(false);
         }
@@ -355,6 +355,7 @@ export class DocumentCloner {
             const counters = this.counters.parse(new CSSParsedCounterDeclaration(this.context, style));
             const before = this.resolvePseudoContent(node, clone, styleBefore, PseudoElementType.BEFORE);
 
+            // custom element should copy style inside the shadow dom
             if (isCustomElement(node)) {
                 copyStyles = true;
             }
